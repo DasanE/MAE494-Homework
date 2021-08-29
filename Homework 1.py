@@ -17,4 +17,4 @@ const = ({'type': 'eq', 'fun': lambda x: x[0]+3*x[1]},
 bounds = ((-10,10),(-10,10),(-10,10),(-10,10),(-10,10))
 res = minimize(fun, (-9,3,5,-7,9), method = 'SLSQP', bounds = bounds, constraints = const)
 
-res
+print(res)
