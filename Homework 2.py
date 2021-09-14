@@ -1,10 +1,18 @@
 ## Homework 2 ##
+import math
+import os
 
 ## Problem 1
 # f = 2x1^2 - 4x1x2 + 1.5x2^2 + x2
 # Show that the stationary point (Zero Gradiant) is a saddle (w/ Indefinite Hessian)
+grad = [4*x[0]-4*x[1], -4*x[0]+3*x[1]+1]
+hess = [[4, -4],
+        [-4, 3]]
 
+eig1 = (7+math.sqrt(7**2-4*1*0))/(2*1)
+eig2 = (7-math.sqrt(7**2-4*1*0))/(2*1)
 
+print(eig1  + ' ' + eig2 '/n')
 
 # Find directions of downslopes away from the saddle (w/ Taylor's Expansion)
 
