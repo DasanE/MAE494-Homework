@@ -111,7 +111,7 @@ Minimize (1-2x2-3x3+1)^2 + x2^2 + (x3-1)^2
 obj = lambda x2, x3: (1-2*x2-3*x3+1)**2 + x2**2 + (x3-1)**2
 grad = lambda x2, x3: np.array([10*x2+12*x3-8, 12*x2+20*x3-14])
 err = 1*10**(-3)
-x0 = np.array([0, 0, 1])
+x0 = np.array([-1, -.125, .75])
 k = 0
 a = 1
 soln = [x0]
@@ -131,12 +131,8 @@ def lineSearch(x2,x3,g):
         c_array = np.array([x2,x3])-a*g
         return obj(c_array[0], c_array[1])
 
-    #print(str(phi(a, x2, x3)))
-    #print(str(cfunc(a, x2, x3)))
-
     while phi(a, x2, x3) < cfunc(a, x2, x3):
         a = a*B
-        #print(str(a) + '       ' + str(phi(a,x2,x3)) + '           ' + str(cfunc(a, x2, x3)))
     return a
 
 while error >= err:
@@ -151,13 +147,54 @@ while error >= err:
     slope = grad(x[1], x[2])
     error = math.sqrt(slope[0]**2+slope[1]**2)
     k = k + 1
+    #print(str(error) + '     ' + str(err))
+
+#print(str(soln))
+
+print('\n')
+print('The point closest to the plane is: ' + str(x))
+print('This point has an error of: ' + str(error))
+print('Algorithm ran for: ' + str(k) + ' iteration(s)')
+print('\n')
+
+# Newton's Algorithm (will converge since H is pd)
+obj = lambda x2, x3: (1-2*x2-3*x3+1)**2 + x2**2 + (x3-1)**2
+grad = lambda x2, x3: np.array([10*x2+12*x3-8, 12*x2+20*x3-14])
+H = [[10, 12],[12, 20]]
+err = 1*10**(-3)
+x0 = np.array([0, 0, 0])
+k = 0
+a = 1
+soln = [x0]
+x = soln[k]
+
+f0 = obj(x[1],x[2])
+g0 = grad(x[1],x[2])
+error = math.sqrt((g0[0]**2+g0[1]**2))
+fk = f0 + g0.T*(xa-x0)
+
+# function
+def func_k(x1, x2, slope):
+    xa = np.array([x1, x2])
+
+    return f0 + g0.dot(xa-x0) + ((1/2*(xa-x0)).dot(H)).dot((xa-x0).T)
+
+
+while error >= err:
+
+    slope = grad(x[1], x[2])
+    a = func_k(x[1], x[2], slope)
+    np.array(grad(x[1], x[2]))
+    x = np.array([x[1], x[2]])-(a*np.array(grad(x[1], x[2])))
+    x1 = np.array([1 - 2*x[0] - 3*x[1]])
+    x = np.concatenate((x1, x), axis=None)
+    soln.append(x)
+    slope = grad(x[1], x[2])
+    error = math.sqrt(slope[0]**2+slope[1]**2)
+    k = k + 1
     print(str(error) + '     ' + str(err))
 
 print(str(soln))
-
-# Newton's Algorithm
-
-
 
 
 ## Problem 3
