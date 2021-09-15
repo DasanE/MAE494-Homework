@@ -70,6 +70,7 @@ while i < n:
     i = i + 1
     j = 0
 
+print('\n')
 # taking these points and interpolating them to get where the function has zero change we get the following:
 '''
 (.5,0)
@@ -88,16 +89,67 @@ s2 = 1.1424x-.1424
         s1 > 0 & s2 < 0
             or
         s1 < 0 & s2 > 0
+        
+        (ax1+bx2) < 0 & (cx1+dx2) > 0  or  (ax1+bx2) < 0 & (cx1+dx2) > 0
+        where a/b = 2 and c/d = 1.1424
 '''
-
 
 # Problem 2
 # Find point on plane (x1 + 2x2 + 3x3 = 1) nearest to the point (-1, 0, 1)T , Is this a convex problem?
-
+'''
+Minimize (x1+1)^2 + x2^2 + (x3-1)^2
+x1 = 1 - 2x2 - 3x3
+n = <1,2,3>
+Minimize (1-2x2-3x3+1)^2 + x2^2 + (x3-1)^2
+'''
 
 # Implement the gradient descent and Newton's algorithm for solving the problem.
 # Attach your codes along with a short summary including (1) the initial points tested,
 # (2) corresponding solutions, (3) a log-linear convergence plot.
+
+# Gradient Descent
+obj = lambda x1, x2, x3: (1-2*x2-3*x3+1)**2 + x2**2 + (x3-1)**2
+grad = lambda x1, x2, x3: [10*x2+12*x3-8, 12*x2+20*x3-14]
+err = 1*10**(-3)
+x0 = np.array([0, 0, 0])
+k = 0
+a = 1
+soln = [x0]
+x = soln[k]
+
+g0 = grad(x[0],x[1],x[2])
+error = math.sqrt((g0[0]**2+g0[1]**2))
+
+def lineSearch(x1,x2,x3):
+    a = 1
+    t = .8
+    B = .5
+
+    g = np.array(grad(x1,x2,x3))
+
+    phi = lambda a, x1, x2, x3: obj(x1,x2,x3) - a*t*g.dot(g.T)
+    cfun = lambda x1, x2, x3: obj(x1, x2, x3) - a*g
+    print('phi = ' + str(phi(a, x1, x2, x3)) + '      cfun = ' + str(cfun(x1, x2, x3)))
+    while phi(a, x1, x2, x3) < cfun(x1, x2, x3):
+
+        a = a*B
+    return a
+
+while error >= err:
+    a = lineSearch(x[0],x[1],x[2])
+    x = x - a*grad(x[0],x[1],x[2])
+    soln.append(x[0],x[1],x[2])
+    error = math.sqrt(grad[0]**2+grad[1]**2)
+    k = k + 1
+
+print(str(soln))
+
+
+
+
+
+# Newton's Algorithm
+
 
 
 
