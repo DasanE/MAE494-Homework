@@ -108,37 +108,41 @@ Minimize (1-2x2-3x3+1)^2 + x2^2 + (x3-1)^2
 # (2) corresponding solutions, (3) a log-linear convergence plot.
 
 # Gradient Descent
-obj = lambda x1, x2, x3: (1-2*x2-3*x3+1)**2 + x2**2 + (x3-1)**2
-grad = lambda x1, x2, x3: [10*x2+12*x3-8, 12*x2+20*x3-14]
+obj = lambda x2, x3: (1-2*x2-3*x3+1)**2 + x2**2 + (x3-1)**2
+grad = lambda x2, x3: [10*x2+12*x3-8, 12*x2+20*x3-14]
 err = 1*10**(-3)
-x0 = np.array([0, 0, 0])
+x0 = np.array([-1, 0, 1])
 k = 0
 a = 1
 soln = [x0]
 x = soln[k]
 
-g0 = grad(x[0],x[1],x[2])
+g0 = grad(x[1],x[2])
 error = math.sqrt((g0[0]**2+g0[1]**2))
 
-def lineSearch(x1,x2,x3):
+def lineSearch(x2,x3):
     a = 1
     t = .8
     B = .5
 
-    g = np.array(grad(x1,x2,x3))
+    g = np.array(grad(x2,x3))
+    pos = np.array([x2,x3])
+    func = pos - a*g
+    cfun = obj(func[0], func[1])
 
-    phi = lambda a, x1, x2, x3: obj(x1,x2,x3) - a*t*g.dot(g.T)
-    cfun = lambda x1, x2, x3: obj(x1, x2, x3) - a*g
-    print('phi = ' + str(phi(a, x1, x2, x3)) + '      cfun = ' + str(cfun(x1, x2, x3)))
-    while phi(a, x1, x2, x3) < cfun(x1, x2, x3):
+    phi = lambda a, x2, x3: obj(x2,x3) - a*t*g.dot(g.T)
 
+    print('phi = ' + str(phi(a, x2, x3)) + '      cfun = ' + str(cfun))
+
+    while phi(a, x2, x3) < cfun:
         a = a*B
+        print(str(a) + '       ' + str(phi(a,x2,x3)) + '           ' + str(cfun))
     return a
 
 while error >= err:
-    a = lineSearch(x[0],x[1],x[2])
-    x = x - a*grad(x[0],x[1],x[2])
-    soln.append(x[0],x[1],x[2])
+    a = lineSearch(x[1],x[2])
+    x = x - a*grad(x[1],x[2])
+    soln.append(x[1],x[2])
     error = math.sqrt(grad[0]**2+grad[1]**2)
     k = k + 1
 
