@@ -1,23 +1,63 @@
 ## Homework 2 ##
 import math
 import os
+import numpy as np
 
 ## Problem 1
 # f = 2x1^2 - 4x1x2 + 1.5x2^2 + x2
 # Show that the stationary point (Zero Gradiant) is a saddle (w/ Indefinite Hessian)
+x = np.array([0,0])
 grad = [4*x[0]-4*x[1], -4*x[0]+3*x[1]+1]
-hess = [[4, -4],
-        [-4, 3]]
+hess = np.array([[4, -4],
+                [-4, 3]])
 
-eig1 = (7+math.sqrt(7**2-4*1*0))/(2*1)
-eig2 = (7-math.sqrt(7**2-4*1*0))/(2*1)
+sadl = np.array([1, 1])
 
-print(eig1  + ' ' + eig2 '/n')
+eig1 = (7-math.sqrt(7**2-4*1*-4))/(2*1)
+eig2 = (7+math.sqrt(7**2-4*1*-4))/(2*1)
+
+print('\n')
+print('First Eigenvalue = ' + str(eig1)  + ' Second Eigenvalue = ' + str(eig2))
+print('Since the eigenvalues are both positive and negative this function is a saddle')
+print('The saddle point is: ' + str(sadl))
+print('\n')
 
 # Find directions of downslopes away from the saddle (w/ Taylor's Expansion)
+f0 = 2*sadl[0]**2 - 4*sadl[0]*sadl[1] + 1.5*sadl[1]**2 +sadl[1]
+g0 = np.array([4*sadl[0]-4*sadl[1], -4*sadl[0]+3*sadl[1]+1])
+
+# function
+def f1(x0, x1):
+        xa = np.array([x0, x1])
+        '''
+        fx = xa-sadl
+        print('fx = ' + str(fx))
+        print('hess = ' + str(hess))
+
+        fa = 1/2*fx
+        print('fa = ' + str(fa))
+
+        fb = fa.dot(hess)
+        print('fb = ' + str(fb))
+
+        fc = fb.dot(fx.T)
+        print('fc = ' + str(fc))
+        '''
+        return f0 + g0.dot(xa-sadl) +((1/2*(xa-sadl)).dot(hess)).dot((xa-sadl).T)
+
+# Test out single point
+
+px1 = .5
+px2 = .5
+p1 = f1(px1, px2)
+dp1 = p1-f0
+print('Point (' + str(px1) + ',' + str(px2) + ') has a value of ' + str(p1) + ' which lies ' + str(dp1) + ' above/below the saddle point')
 
 
-## Problem 2
+
+
+
+# Problem 2
 # Find point on plane (x1 + 2x2 + 3x3 = 1) nearest to the point (-1, 0, 1)T , Is this a convex problem?
 
 
