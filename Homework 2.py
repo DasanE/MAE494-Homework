@@ -46,15 +46,49 @@ def f1(x0, x1):
         return f0 + g0.dot(xa-sadl) +((1/2*(xa-sadl)).dot(hess)).dot((xa-sadl).T)
 
 # Test out single point
-
-px1 = .5
-px2 = .5
+'''
+px1 = .625
+px2 = .625
 p1 = f1(px1, px2)
 dp1 = p1-f0
 print('Point (' + str(px1) + ',' + str(px2) + ') has a value of ' + str(p1) + ' which lies ' + str(dp1) + ' above/below the saddle point')
+'''
 
+n = 5
+px1 = np.linspace(0,2,n)
+px2 = np.linspace(0,2,n)
+pth = np.zeros((n,n))
+dpth = np.zeros((n,n))
+i = 0
+j = 0
+while i < n:
+    while j < n:
+        pth[i][j] = f1(px1[i],px2[j])
+        dpth[i][j] = pth[i][j]-f0
+        print('Point (' + str(px1[i]) + ',' + str(px2[j]) + ') has a value of ' + str(pth[i][j]) + ' which lies ' + str(dpth[i][j]) + ' above/below the saddle point')
+        j = j + 1
+    i = i + 1
+    j = 0
 
+# taking these points and interpolating them to get where the function has zero change we get the following:
+'''
+(.5,0)
+(1.5,2)
+(.375,.286)
+(1.625,1.714)
+'''
+# Calculating the slopes of each set of points gets the following equations:
+'''
+s1 = 2x-1
+s2 = 1.1424x-.1424
+'''
 
+# This means that in order reduce the function (f) you need to make sure that you head in the directions of either
+'''
+        s1 > 0 & s2 < 0
+            or
+        s1 < 0 & s2 > 0
+'''
 
 
 # Problem 2
