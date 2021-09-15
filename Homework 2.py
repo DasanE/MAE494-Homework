@@ -94,7 +94,7 @@ s2 = 1.1424x-.1424
         where a/b = 2 and c/d = 1.1424
 '''
 
-# Problem 2
+## Problem 2
 # Find point on plane (x1 + 2x2 + 3x3 = 1) nearest to the point (-1, 0, 1)T , Is this a convex problem?
 '''
 Minimize (x1+1)^2 + x2^2 + (x3-1)^2
@@ -109,9 +109,9 @@ Minimize (1-2x2-3x3+1)^2 + x2^2 + (x3-1)^2
 
 # Gradient Descent
 obj = lambda x2, x3: (1-2*x2-3*x3+1)**2 + x2**2 + (x3-1)**2
-grad = lambda x2, x3: [10*x2+12*x3-8, 12*x2+20*x3-14]
+grad = lambda x2, x3: np.array([10*x2+12*x3-8, 12*x2+20*x3-14])
 err = 1*10**(-3)
-x0 = np.array([-1, 0, 1])
+x0 = np.array([0, 0, 1])
 k = 0
 a = 1
 soln = [x0]
@@ -120,37 +120,40 @@ x = soln[k]
 g0 = grad(x[1],x[2])
 error = math.sqrt((g0[0]**2+g0[1]**2))
 
-def lineSearch(x2,x3):
+def lineSearch(x2,x3,g):
     a = 1
     t = .8
     B = .5
 
-    g = np.array(grad(x2,x3))
-    pos = np.array([x2,x3])
-    func = pos - a*g
-    cfun = obj(func[0], func[1])
-
     phi = lambda a, x2, x3: obj(x2,x3) - a*t*g.dot(g.T)
 
-    print('phi = ' + str(phi(a, x2, x3)) + '      cfun = ' + str(cfun))
+    def cfunc(a, x2, x3):
+        c_array = np.array([x2,x3])-a*g
+        return obj(c_array[0], c_array[1])
 
-    while phi(a, x2, x3) < cfun:
+    #print(str(phi(a, x2, x3)))
+    #print(str(cfunc(a, x2, x3)))
+
+    while phi(a, x2, x3) < cfunc(a, x2, x3):
         a = a*B
-        print(str(a) + '       ' + str(phi(a,x2,x3)) + '           ' + str(cfun))
+        #print(str(a) + '       ' + str(phi(a,x2,x3)) + '           ' + str(cfunc(a, x2, x3)))
     return a
 
 while error >= err:
-    a = lineSearch(x[1],x[2])
-    x = x - a*grad(x[1],x[2])
-    soln.append(x[1],x[2])
-    error = math.sqrt(grad[0]**2+grad[1]**2)
+
+    slope = grad(x[1], x[2])
+    a = lineSearch(x[1], x[2], slope)
+    np.array(grad(x[1], x[2]))
+    x = np.array([x[1], x[2]])-(a*np.array(grad(x[1], x[2])))
+    x1 = np.array([1 - 2*x[0] - 3*x[1]])
+    x = np.concatenate((x1, x), axis=None)
+    soln.append(x)
+    slope = grad(x[1], x[2])
+    error = math.sqrt(slope[0]**2+slope[1]**2)
     k = k + 1
+    print(str(error) + '     ' + str(err))
 
 print(str(soln))
-
-
-
-
 
 # Newton's Algorithm
 
