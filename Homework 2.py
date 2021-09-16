@@ -3,6 +3,10 @@ import math
 import os
 import numpy as np
 
+'''
+THERE IS A PDF FILE ON GITHUB THAT HAS THE MISSING INFORMATION THAT COULDNT BE INSERTED INTO THE CODE 
+'''
+
 ## Problem 1
 # f = 2x1^2 - 4x1x2 + 1.5x2^2 + x2
 # Show that the stationary point (Zero Gradiant) is a saddle (w/ Indefinite Hessian)
@@ -71,17 +75,11 @@ while i < n:
     j = 0
 
 print('\n')
-# taking these points and interpolating them to get where the function has zero change we get the following:
-'''
-(.5,0)
-(1.5,2)
-(.375,.286)
-(1.625,1.714)
-'''
+
 # Calculating the slopes of each set of points gets the following equations:
 '''
 s1 = 2x-1
-s2 = 1.1424x-.1424
+s2 = .666x-.333
 '''
 
 # This means that in order reduce the function (f) you need to make sure that you head in the directions of either
@@ -91,7 +89,7 @@ s2 = 1.1424x-.1424
         s1 < 0 & s2 > 0
         
         (ax1+bx2) < 0 & (cx1+dx2) > 0  or  (ax1+bx2) < 0 & (cx1+dx2) > 0
-        where a/b = 2 and c/d = 1.1424
+        where a = .6666  b = -1.5 and c = 2    d = -.5
 '''
 
 ## Problem 2
@@ -147,7 +145,6 @@ while error >= err:
     slope = grad(x[1], x[2])
     error = math.sqrt(slope[0]**2+slope[1]**2)
     k = k + 1
-    #print(str(error) + '     ' + str(err))
 
 #print(str(soln))
 
@@ -157,12 +154,13 @@ print('This point has an error of: ' + str(error))
 print('Algorithm ran for: ' + str(k) + ' iteration(s)')
 print('\n')
 
+
 # Newton's Algorithm (will converge since H is pd)
 obj = lambda x2, x3: (1-2*x2-3*x3+1)**2 + x2**2 + (x3-1)**2
 grad = lambda x2, x3: np.array([10*x2+12*x3-8, 12*x2+20*x3-14])
 H = np.array([[10, 12],[12, 20]])
 err = 1*10**(-3)
-x0 = np.array([10, 1000, -1500])
+x0 = np.array([50, 25, 99])
 k = 0
 a = 1
 soln = [x0]
@@ -200,31 +198,26 @@ print('\n')
 ## Problem 3
 # f(x) and g(x) are two convex functions defined on the convex set X
 # Prove that a*f(x) + b*g(x) is convex for a>0 and b>0
-
-
 # In what conditions will F(g(x)) be convex?
-
+'''
+SEE PDF ON GITHUB FOR ANSWERS
+'''
 
 ## Problem 4
 # Show that f(x1) >= f(x0) + g(x1-x0)Txo for a convex function f(x): X -> R
-
-
+'''
+SEE PDF ON GITHUB FOR ANSWERS
+'''
 
 ## Problem 5
 # Consider an illumination problem: There are n lamps and m mirrors fixed to the ground. The target reflection intensity
 # level is I(t). The actual reflection intensity level on the kth mirror can be computed as a^T_k*p where a_k is given
 # by the distances between all lamps to the mirror, and p=[p_1,...,p_n]^T are the power output of the lamps. The objective
 # is to keep the actual intensity levels as close to the target as possible by tuning the power output p.
-
 # Formulate this problem as an optimization problem.
-
-
-
 # Is your problem convex?
-
-
 # If we require the overall power output of any of the $n$ lamps to be less than $p^*$, will the problem have a unique solution?
-
-
-
 # If we require no more than half of the lamps to be switched on, will the problem have a unique solution?
+'''
+SEE PDF ON GITHUB FOR ANSWERS
+'''
