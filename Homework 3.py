@@ -12,77 +12,79 @@ a_dioxane = t.tensor([7.43155, 1554.679, 240.337])
 
 psat_w = 10**(a_water[0]-(a_water[1])/(T+a_water[2]))
 psat_d = 10**(a_dioxane[0]-(a_dioxane[1])/(T+a_dioxane[2]))
+print("psat_w = ", psat_w)
+print("psat_d = ", psat_d)
 
 # Measured Data Table
-x1 = Variable(t.tensor([0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1]))
-x2 = Variable(t.tensor([1, .9, .8, .7, .6, .5, .4, .3, .2, .1, 0]))
+x1 = t.tensor([0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1])
+x2 = t.tensor([1, .9, .8, .7, .6, .5, .4, .3, .2, .1, 0])
 p = t.tensor([28.1, 34.4, 36.7, 36.9, 36.8, 36.7, 36.5, 35.4, 32.9, 27.7, 17.5])
 
 A_opt = Variable(t.tensor([1.0, 1.0]), requires_grad=True)
 
 error = 10**(-3)
-a = .01
+a = .0001
 
 # Functions
-def getPoint():
-    i = 0
-    val1 = 0
-    while i < 11:
-        val1[i] = x1[i]*math.exp(A12*(A12*x2[i]/(A12*x1[i]+A21*x2[i]))**2)*psat_w + x2[i]*math.exp(A21*((A12*x1[i])/(A12*x1[i]+A21*x2[i]))**2)*psat_d
-        i = i + 1
-    return val1
+def getPoint(A12, A21):
+    return x1*t.exp(A12*(A21*x2/(A12*x1+A21*x2))**2)*psat_w + x2*t.exp(A21*(A12*x1/(A12*x1+A21*x2))**2)*psat_d
 
-def loss(p1):
-    return sum((p1 - p)**2)
-
-# Formulate the Least Square Problem (Estimate A12 and A21 using data from above table)
-def getPoint(A12, A21, i):
-    return x1[i]*t.exp(A12*(A12*x2[i]/(A12*x1[i]+A21*x2[i]))**2)*psat_w + x2[i]*t.exp(A21*((A12*x1[i])/(A12*x1[i]+A21*x2[i]))**2)*psat_d
-
-def loss(p1, i):
-    return (p1 - p[i])**2
-
-pred0 = getPoint(A_opt[0], A_opt[1],0)
-pred1 = getPoint(A_opt[0], A_opt[1],1)
-pred2 = getPoint(A_opt[0], A_opt[1],2)
-pred3 = getPoint(A_opt[0], A_opt[1],3)
-pred4 = getPoint(A_opt[0], A_opt[1],4)
-pred5 = getPoint(A_opt[0], A_opt[1],5)
-pred6 = getPoint(A_opt[0], A_opt[1],6)
-pred7 = getPoint(A_opt[0], A_opt[1],7)
-pred8 = getPoint(A_opt[0], A_opt[1],8)
-pred9 = getPoint(A_opt[0], A_opt[1],9)
-pred10 = getPoint(A_opt[0], A_opt[1],10)
-
-loss0 = loss(pred0,0)
-loss1 = loss(pred1,1)
-loss2 = loss(pred2,2)
-loss3 = loss(pred3,3)
-loss4 = loss(pred4,4)
-loss5 = loss(pred5,5)
-loss6 = loss(pred6,6)
-loss7 = loss(pred7,7)
-loss8 = loss(pred8,8)
-loss9 = loss(pred9,9)
-loss10 = loss(pred10,10)
-
-loss = loss0+loss1+loss2+loss3+loss4+loss5+loss6+loss7+loss8+loss9+loss10
-
-loss.backward()
-
-print(A_opt.grad)
-# ([-980.2328, 197.636])
+def loss_(p1):
+    return (p1 - p)**2
 
 # Since not linear, there is no analytical solution. Solve using gradient descent or Newton's method
+for i in range(1000):
+    pred = t.zeros(1,11)
+    loss_pred = t.zeros(1,11)
 
+    pred = getPoint(A_opt[0], A_opt[1])
 
+    loss_pred = loss_(pred)
 
+    loss = t.sum(loss_pred)
+    print("Loss for current set is = ", loss)
 
-# Compare optimized model with the data. Does your model fit well with the data
+    loss.backward()
 
+    with t.no_grad():
+        A_opt -= a * A_opt.grad
+        A_opt.grad.zero_()
 
+    print("New set of A values = ", A_opt)
+    print(" ")
 
+print("The final data set for A = ", A_opt.data.numpy())
+print("The loss at this location = ", loss.data.numpy())
+print("The gradiant at this location = ", A_opt.grad)
 
+# Compare your optimized model with the data. Does your model fit well with the data
+from mpl_toolkits import mplot3d
+import matplotlib.pyplot as plt
+
+A12 = 1.958413
+A21 = 1.6891907
+psat_w = 17.47325
+psat_d = 28.8241
+
+fig = plt.figure()
+ax = plt.axes(projection='3d')
+
+def f(x,y):
+    return x*np.exp(A12*(A21*y/(A12*x+A21*y))**2)*psat_w + y*np.exp(A21*(A12*x/(A12*x+A21*y))**2)*psat_d
+
+x = np.linspace(0,2,100)
+y = np.linspace(0,2,100)
+
+X, Y = np.meshgrid(x,y)
+Z = f(X, Y)
+
+ax.contour3D(X,Y,Z,75)
+
+xdata = t.tensor([0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1])
+ydata = t.tensor([1, .9, .8, .7, .6, .5, .4, .3, .2, .1, 0])
+zdata = t.tensor([28.1, 34.4, 36.7, 36.9, 36.8, 36.7, 36.5, 35.4, 32.9, 27.7, 17.5])
+
+ax.scatter3D(xdata, ydata, zdata)
 
 ## Problem 2
 
