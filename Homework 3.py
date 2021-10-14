@@ -1,7 +1,4 @@
 ## Homework 3 ##
-import numpy as np
-import torch as t
-from torch.autograd import Variable
 
 ## Problem 1
 import numpy as np
