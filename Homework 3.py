@@ -70,6 +70,8 @@ psat_d = 28.8241
 
 fig = plt.figure()
 ax = plt.axes(projection='3d')
+plt.xlabel("X1")
+plt.ylabel("X2")
 
 def f(x,y):
     return x*np.exp(A12*(A21*y/(A12*x+A21*y))**2)*psat_w + y*np.exp(A21*(A12*x/(A12*x+A21*y))**2)*psat_d
