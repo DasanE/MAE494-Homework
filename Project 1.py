@@ -1,6 +1,7 @@
 ## Project 1 ##
 
 # Import Libraries
+import markdown
 import logging
 import math
 import random
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 FRAME_TIME = 0.1  # time interval
 GRAVITY_ACCEL = 0.12  # gravity constant
 BOOST_ACCEL = 0.18  # thrust constant
+DRAG_ACCEL = 0.05 # drag constant
 
 # # the following parameters are not being used in the sample code
 PLATFORM_WIDTH = 0.25  # landing platform width
@@ -48,8 +50,11 @@ class Dynamics(nn.Module):
         # Note: Same reason as above. Need a 2-by-1 tensor.
         delta_state = BOOST_ACCEL * FRAME_TIME * t.tensor([0., -1.]) * action
 
+        # Apply drag
+        delta_state_drag = DRAG_ACCEL * FRAME_TIME * t.tensor([0., 1.]) * state[1] ** 2
+
         # Update velocity
-        state = state + delta_state + delta_state_gravity
+        state = state + delta_state + delta_state_gravity + delta_state_drag
 
         # Update state
         # Note: Same as above. Use operators on matrices/tensors as much as possible. Do not use element-wise operators as they are considered inplace.
