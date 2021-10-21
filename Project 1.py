@@ -16,13 +16,19 @@ logger = logging.getLogger(__name__)
 FRAME_TIME = 0.1  # time interval
 GRAVITY_ACCEL = 0.12  # gravity constant
 VERT_BOOST_ACCEL = 0.18  # vertical thrust constant
-THETA_BOOST_ACCEL = .04 # angular thrust constant
+THETA_BOOST_ACCEL = .14 # angular thrust constant
 DRAG_ACCEL = 0.1 # drag constant
 
 # Rocket Data
 ROCKET_WIDTH = 1 # width of the rocket
 ROCKET_HEIGHT = 4 # height of the rocket
 RANDOMNESS = .000 # importance of the randomness
+
+# Error Weights
+y_weight = 1
+y_dot_weight = 10
+theta_weight = 1
+theta_dot_weight = 10
 
 # # the following parameters are not being used in the sample code
 # PLATFORM_WIDTH = 0.25  # landing platform width
@@ -63,8 +69,8 @@ class Dynamics(nn.Module):
         delta_state_drag = DRAG_ACCEL * FRAME_TIME * t.tensor([0., -1., 0., 0.]) * ROCKET_AREA * (t.tensor([0., -1., 0., 0.])*state) ** 2
 
         # Apply angular thrust
-        c_delta_state_angle = THETA_BOOST_ACCEL * FRAME_TIME * t.tensor([0., 0., 0., 1.]) * action[1]
-        cc_delta_state_angle = THETA_BOOST_ACCEL * FRAME_TIME * t.tensor([0., 0., 0., -1.]) * action[2]
+        c_delta_state_angle = THETA_BOOST_ACCEL * FRAME_TIME * t.tensor([0., 0., 0., -1.]) * action[1]
+        cc_delta_state_angle = THETA_BOOST_ACCEL * FRAME_TIME * t.tensor([0., 0., 0., 1.]) * action[2]
 
         # Add randomn events
         Rand = t.rand(4)
@@ -81,7 +87,7 @@ class Dynamics(nn.Module):
         # Update state
         # Note: Same as above. Use operators on matrices/tensors as much as possible. Do not use element-wise operators as they are considered inplace.
         step_mat = t.tensor([[1., FRAME_TIME, 0., 0.],[0., 1., 0., 0.],[0., 0., 1., FRAME_TIME],[0., 0., 0., 1.]])
-        state = t.matmul(state, step_mat)
+        state = t.matmul(step_mat, state)
         return state
 
 
@@ -130,11 +136,11 @@ class Simulation(nn.Module):
 
     @staticmethod
     def initialize_state():
-        state = [1., 0., 30., 0.]  # TODO: need batch of initial states
+        state = [1., 0., -5., 0.]  # TODO: need batch of initial states
         return t.tensor(state, requires_grad=False).float()
 
     def error(self, state):
-        return state[0]**2 + state[1]**2 + state[2]**2 + state[3]**2
+        return y_weight*state[0]**2 + y_dot_weight*state[1]**2 + theta_weight*state[2]**2 + theta_dot_weight*state[3]**2
 
 
 
@@ -167,6 +173,20 @@ class Optimize:
         theta = data[:, 2]
         theta_dot = data[:, 3]
 
+        '''
+        iter_num = epoch + 1
+        loss_num = loss.detach().numpy()
+        
+        x1 = t.tensor([item_num])
+        y1 = t.tensor([loss_num])
+        
+        loss_x = t.cat((loss_x, iter_num), 1)
+        loss_y = t.cat((loss_x, loss_num), 1)
+        
+        print("x loss is = ", loss_x)
+        print("y loss is = ", loss_y)
+        '''
+
         fig = plt.figure()
 
         plt.subplot(1,2,1)
@@ -181,12 +201,19 @@ class Optimize:
         plt.ylabel("Angle Velocity of Rocket")
         plt.show()
 
+        '''
+        plt.subplot(1,3,3)
+        plt.plot(loss_x,loss_y)
+        plt.xlabel("Iteration")
+        plt.ylabel("Loss")
+        plt.show()  
+        '''
 
-    # Now it's time to run the code!
+# Now it's time to run the code!
 
-T = 200  # number of time steps
+T = 150  # number of time steps
 dim_input = 4  # state space dimensions
-dim_hidden = 100  #6 latent dimensions
+dim_hidden = 10  #6 latent dimensions
 dim_output = 3  # action space dimensions
 d = Dynamics()  # define dynamics
 c = Controller(dim_input, dim_hidden, dim_output)  # define controller
