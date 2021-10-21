@@ -23,17 +23,14 @@ DRAG_ACCEL = 0.1 # drag constant
 ROCKET_WIDTH = 1 # width of the rocket
 ROCKET_HEIGHT = 4 # height of the rocket
 RANDOMNESS = .000 # importance of the randomness
+BATCH_SIZE = 5 # number of initial states being used to train
 
 # Error Weights
 y_weight = 1
-y_dot_weight = 10
+y_dot_weight = 2
 theta_weight = 1
-theta_dot_weight = 10
+theta_dot_weight = 2
 
-# # the following parameters are not being used in the sample code
-# PLATFORM_WIDTH = 0.25  # landing platform width
-# PLATFORM_HEIGHT = 0.06  # landing platform height
-# ROTATION_ACCEL = 20  # rotation constant
 
 class Dynamics(nn.Module):
 
@@ -54,14 +51,9 @@ class Dynamics(nn.Module):
         """
 
         # Apply gravity
-        # Note: Here gravity is used to change velocity which is the second element of the state vector
-        # Normally, we would do x[1] = x[1] + gravity * delta_time
-        # but this is not allowed in PyTorch since it overwrites one variable (x[1]) that is part of the computational graph to be differentiated.
-        # Therefore, I define a tensor dx = [0., gravity * delta_time], and do x = x + dx. This is allowed...
         delta_state_gravity = t.tensor([0., GRAVITY_ACCEL * FRAME_TIME, 0., 0.])
 
         # Apply vertical thrust
-        # Note: Same reason as above. Need a 2-by-1 tensor.
         delta_state_thrust = VERT_BOOST_ACCEL * FRAME_TIME * t.tensor([0., -1., 0., 0.]) * action[0]
 
         # Apply drag
@@ -85,7 +77,6 @@ class Dynamics(nn.Module):
         state = state + delta_state_thrust + delta_state_gravity + delta_state_drag + delta_state_rand + c_delta_state_angle + cc_delta_state_angle
 
         # Update state
-        # Note: Same as above. Use operators on matrices/tensors as much as possible. Do not use element-wise operators as they are considered inplace.
         step_mat = t.tensor([[1., FRAME_TIME, 0., 0.],[0., 1., 0., 0.],[0., 0., 1., FRAME_TIME],[0., 0., 0., 1.]])
         state = t.matmul(step_mat, state)
         return state
@@ -99,14 +90,19 @@ class Controller(nn.Module):
         dim_output: # of actions
         dim_hidden: up to you
         """
+
+        # nn.Sigmoid()
+        # nn.Tanh()
+        # nn.ReLU()
+
         super(Controller, self).__init__()
         self.network = nn.Sequential(
             nn.Linear(dim_input, dim_hidden),
-            nn.Tanh(),
+            nn.ReLU(), nn.Sigmoid(),
             nn.Linear(dim_hidden, dim_output),
-            # You can add more layers here
-            nn.Sigmoid()
+            nn.Tanh()
         )
+
 
     def forward(self, state):
         action = self.network(state)
@@ -114,10 +110,10 @@ class Controller(nn.Module):
 
 
 class Simulation(nn.Module):
-
-    def __init__(self, controller, dynamics, T):
+    # runs through the steps (T)
+    def __init__(self, controller, dynamics, T, i):
         super(Simulation, self).__init__()
-        self.state = self.initialize_state()
+        self.state = self.initialize_state(i)
         self.controller = controller
         self.dynamics = dynamics
         self.T = T
@@ -135,16 +131,19 @@ class Simulation(nn.Module):
         return self.error(state)
 
     @staticmethod
-    def initialize_state():
-        state = [1., 0., -5., 0.]  # TODO: need batch of initial states
+    def initialize_state(i):
+        batch = [[1.3, 0., -5.6, 1.],[4.2, -.5, -3.2, 0.],[2.1, 0., 6.1, -1.8],[6.25, -0.75, -2.7, 0.5],[2.5, 1.1, 5.6, 2.8]]
+        state = batch[i]
+        print("The initial state being tested = ", state)
         return t.tensor(state, requires_grad=False).float()
 
     def error(self, state):
-        return y_weight*state[0]**2 + y_dot_weight*state[1]**2 + theta_weight*state[2]**2 + theta_dot_weight*state[3]**2
-
+        obj = y_weight*state[0]**2 + y_dot_weight*state[1]**2 + theta_weight*state[2]**2 + theta_dot_weight*state[3]**2
+        return obj
 
 
 class Optimize:
+    # calculates the gradient and the loss to optimize the neural network
     def __init__(self, simulation):
         self.simulation = simulation
         self.parameters = simulation.controller.parameters()
@@ -163,7 +162,8 @@ class Optimize:
         for epoch in range(epochs):
             loss = self.step()
             print('[%d] loss: %.3f' % (epoch + 1, loss))
-            self.visualize()
+            if((epoch+1) == epochs):
+                self.visualize()
 
     def visualize(self):
         data = np.array([self.simulation.state_trajectory[i].detach().numpy() for i in range(self.simulation.T)])
@@ -173,53 +173,38 @@ class Optimize:
         theta = data[:, 2]
         theta_dot = data[:, 3]
 
-        '''
-        iter_num = epoch + 1
-        loss_num = loss.detach().numpy()
-        
-        x1 = t.tensor([item_num])
-        y1 = t.tensor([loss_num])
-        
-        loss_x = t.cat((loss_x, iter_num), 1)
-        loss_y = t.cat((loss_x, loss_num), 1)
-        
-        print("x loss is = ", loss_x)
-        print("y loss is = ", loss_y)
-        '''
-
+        # Plots the data as a subplot
         fig = plt.figure()
 
+        # plots the position vs the velocity of the rocket
         plt.subplot(1,2,1)
         plt.xlabel("Height of Rocket")
         plt.ylabel("Velocity of Rocket")
         plt.plot(y, y_dot)
 
-
+        # plots the angle of the rocket and its rotational velocity
         plt.subplot(1,2,2)
         plt.plot(theta,theta_dot)
         plt.xlabel("Angle of Rocket")
         plt.ylabel("Angle Velocity of Rocket")
         plt.show()
 
-        '''
-        plt.subplot(1,3,3)
-        plt.plot(loss_x,loss_y)
-        plt.xlabel("Iteration")
-        plt.ylabel("Loss")
-        plt.show()  
-        '''
+    # Now it's time to run the code!
 
-# Now it's time to run the code!
-
-T = 150  # number of time steps
+T = 100  # number of time steps
 dim_input = 4  # state space dimensions
-dim_hidden = 10  #6 latent dimensions
+dim_hidden = 12  # latent dimensions
 dim_output = 3  # action space dimensions
 d = Dynamics()  # define dynamics
 c = Controller(dim_input, dim_hidden, dim_output)  # define controller
-s = Simulation(c, d, T)  # define simulation
-o = Optimize(s)  # define optimizer
-o.train(40)  # solve the optimization problem
+
+# trains the neural network over a batch of initial states
+for i in range(BATCH_SIZE):
+    s = Simulation(c, d, T, i)  # define simulation
+    o = Optimize(s)  # define optimizer
+    print("System has been initialized")
+    o.train(40)  # solve the optimization problem
+    print("Training for this initial state is complete")
 
 
 
