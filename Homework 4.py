@@ -104,31 +104,6 @@ ax.plot_surface(X1, X2, opt_Z, rstride = 1, cstride = 1, cmap = 'viridis', edgec
 
 ax.view_init(10,5)
 
-# Find solution
-
-
-## Problem 3
-# Minimize x1, x2, x3
-# f(x1, x2, x3) = x1x2 + x2x3 + x1x3
-
-# Subject to:
-# h -> x1 + x2 + x3 - 3 = 0
-
-# Find the local solution (Use two methods: reduced gradient and lagrange multipliers)
-
-
-
-## Problem 4
-# Minimize x1, x2
-# f(x) = 2x1 + bx2
-
-# Subject to:
-# g1 -> x1^2 + x2^2 -5 <= 0
-# g2 -> x1 - x2 -2 <= 0
-
-# Use reduced gradient to find the value(s) of the parameter b for which the point x_1=1, x_2=2 is the solution to the problem
-
-
 
 ## Problem 5
 # Minimize x1, x2, x3
@@ -137,5 +112,158 @@ ax.view_init(10,5)
 # Subject to:
 # h1 -> x1^2/4 + x2^2/5 + x3^2/25 - 1 = 0
 # h2 -> x1 + x2 - x3 = 0
-
 # Find the solutions by implementing the generalized reduced gradient algorithm
+
+# Min f(x) = x1^2+x2^2+x3^2
+# h1 => x1^2/4+x2^2/5+x3^2/25-1=0
+# h2 => x1 + x2 - x3 = 0
+
+import torch as t
+import math
+
+# Initialize Variables
+x1 = 2.0 #2*math.sqrt(15/17)
+x2 = 2.0 #-1*math.sqrt(5/51)
+x3 = 2.0 #-5*math.sqrt(5/51)
+
+n = 3
+m = 2
+dof = n - m
+
+d = t.tensor([x1])
+s = t.tensor([x2, x3])
+x0 = t.cat([d, s])
+
+k = 0
+error = 10** (-3)
+
+# Objective and Equality Functions
+def func(x):
+    return x[0]**2+x[1]**2+x[2]**2
+
+def h(x):
+    return [[x[0]**2/4+x[1]**2/5+x[2]**2/25-1],[x[0] + x[1] - x[2]]]
+
+# Decision and State Variables
+def dfdd(d):
+    return 2*d[0]
+
+def dhdd(d):
+    return t.tensor([[d[0]/2],[1]])
+
+def dfds(s):
+    return t.tensor([2*s[0], 2*s[1]])
+
+def dhds(s):
+    return t.tensor([[2/5*s[0], 2/25*s[1]], [1, -1]])
+
+# Determines df/dd
+def dfdd_x(df_dd, df_ds, dh_ds, dh_dd):
+    val = t.inverse(dh_ds)
+    ans = t.matmul(df_ds, val)
+    ans = t.matmul(ans, dh_dd)
+    return df_dd - ans
+
+def linesearch(d_df, s_k, d_k):
+    # Initialize
+    a = 1
+    b = .5
+    t0 = .3
+    d_df_T = t.transpose(d_df,0,0)
+    s_dh = t.inverse(dh_ds)
+
+    def f_a(a):
+        dk = d_k-a*d_df
+        f1 = t.matmul(s_dh, dh_dd)
+        f2 = t.matmul(f1, d_df_T)
+        sk = s_k+a*t.transpose(f2,0,0)
+
+        xk = t.cat([dk,sk])
+        return func(xk)
+
+    def p_a(a):
+        f1 = d_k[0]**2+s_k[0]**2+s_k[1]**2
+        f2 = a*t0*t.matmul(d_df, d_df_T)
+        return f1-f2
+
+    while(f_a(a) > p_a(a)):
+        print("function = ", f_a(a))
+        print("phi = ", p_a(a))
+        a = a * b
+
+    return a
+
+# Solving For H = 0
+def solve_h(h, d_k1, s0_k1):
+    while(math.sqrt(h[0]**2+h[1]**2) > error):
+        dh_ds = dhds(s0_k1)
+        sk1j1 = s0_k1-t.matmul(t.inverse(dh_ds),h)
+        print(d_k1)
+        x_k1j1 = t.cat([d_k1,sk1j1[:,0]])
+        print(x_k1j1)
+        h = t.tensor(h(x_k1j1))
+
+# Get the First Degree of Decisiona and State Variables
+df_dd = dfdd(d)
+dh_dd = dhdd(d)
+df_ds = dfds(s)
+dh_ds = dhds(s)
+
+# Calculate Reduced Gradient
+df_dd = dfdd_x(df_dd, df_ds, dh_ds, dh_dd)
+
+# Loop till it reaches tolerance
+while(df_dd**2 > error):
+    a_k = linesearch(df_dd, s, d)
+    d_k1 = d - a_k * df_dd
+    s0_k1 = s + a_k * t.transpose(t.matmul(t.matmul(t.inverse(dh_ds),dh_dd),t.transpose(df_dd,0,0)),0,0)
+    x_k1 = t.cat([d_k1,s0_k1])
+    h = t.tensor(h(x_k1))
+    s_k1 = solve_h(h, d_k1, s0_k1)
+    df_dd = dfdd(d_k1)
+    dh_dd = dhdd(d_k1)
+    df_ds = dfds(s_k1)
+    dh_ds = dhds(s_k1)
+    d_df = dfdd_x(df_dd, df_ds, dh_ds, dh_dd)
+    k = k + 1
+
+# Print Solution
+print("X1 = ", d_k1[0])
+print("X2 = ", s_k1[0])
+print("X3 = ", s_k1[1])
+x_final = t.cat([d, s])
+f_final = func(x_final)
+print("Where f(x) is a minimum at = ", f_final)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
